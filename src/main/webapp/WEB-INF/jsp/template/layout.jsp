@@ -15,7 +15,7 @@
 </head>
 <body>
 	<div id="wrap">
-		<header class="bg-warning">
+		<header class="bg-warning d-flex justify-content-center">
 			<jsp:include page="../include/header.jsp" />
 		</header>
 		<section class="contents d-flex justify-content-center py-3">
