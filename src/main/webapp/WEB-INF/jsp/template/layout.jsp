@@ -18,8 +18,8 @@
 		<header class="bg-warning">
 			<jsp:include page="../include/header.jsp" />
 		</header>
-		<section class="contents">
-		
+		<section class="contents d-flex justify-content-center py-3">
+			<jsp:include page="../${viewName}.jsp" />
 		</section>
 	</div>
 
