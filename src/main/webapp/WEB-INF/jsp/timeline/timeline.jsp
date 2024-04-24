@@ -8,8 +8,15 @@
 		<textarea id="writeTextArea" placeholder="내용을 입력해주세요" class="w-100 border-0"></textarea>
 		
 		<div class="d-flex justify-content-between">
-			<div class="file-upload">
-				<img width="35" src="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-image-512.png">
+			<div class="file-upload d-flex align-items-center">
+				<%-- file 태그를 숨겨두고 이미지 클릭 시 file 클릭 효과 --%>
+				<input type="file" id="file" accept=".jpg, .png, .gif" class="d-none">
+			
+				<%-- 이미지 위에 마우스 올리면 마우스 커서 변경 --%>
+				<a href="#" id="fileUploadBtn"><img width="35" src="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-image-512.png"></a>
+				
+				<%-- 업로드 된 임시 파일명 나타내기 --%>
+				<div id="fileName" class="ml-2"></div>
 			</div>
 			<button id="writeBtn" class="btn btn-info">게시</button>
 		</div>
@@ -18,11 +25,13 @@
 	
 	<%-- 타임라인 영역 --%>
 	<div class="timeline-box my-5">
+	
 		<%-- 카드1 --%>
+		<c:forEach items="${postList}" var="post">
 		<div class="card border rounded mt-3">
 			<%-- 글쓴이, 더보기(삭제) --%>
 			<div class="p-2 d-flex justify-content-between">
-				<span class="font-weight-bold">글쓴이</span>
+				<span class="font-weight-bold">${post.userId}</span>
 				
 				<%-- ...(더보기): 로그인 된 사람과 글쓴이 정보가 일치할 때 노출 --%>
 				<a href="#" class="more-btn"> 
@@ -32,7 +41,7 @@
 			
 			<%-- 카드 이미지 --%>
 			<div class="card-img">
-				<img src="https://cdn.pixabay.com/photo/2022/09/02/19/55/crystal-7428278_1280.jpg" alt="본문 이미지" class="w-100">
+				<img src="${post.imagePath}" alt="본문 이미지" class="w-100">
 			</div>
 			
 			<%-- 좋아요 --%>
@@ -45,8 +54,8 @@
 			
 			<%-- 글 --%>
 			<div class="card-post m-3">
-				<span class="font-weight-bold">글쓴이</span>
-				<span>본문 내용</span>
+				<span class="font-weight-bold">${post.userId}</span>
+				<span>${post.content}</span>
 			</div>
 			
 			<%-- 댓글 제목 --%>
@@ -74,5 +83,92 @@
 				</div>
 			</div> <%--// 댓글 목록 끝 --%>
 		</div> <%--// 카드1 끝 --%>
+		</c:forEach>
 	</div> <%--// 타임라인 영역 끝  --%>
 </div> <%--// contents-box 끝  --%>
+
+<script>
+	$(document).ready(function() {
+		// 파일 이미지 클릭 => 숨겨져 있는 id="file" 동작 시킴
+		$("#fileUploadBtn").on('click', function(e) {
+			e.preventDefault(); // a 태그 기본 동작 멈춤(스크롤 위로 올라가는 것)
+			$("#file").click();
+		});
+		
+		// 사용자가 이미지를 선택하는 순간, 확장자 유효성 확인, 업로드 파일명 노출
+		$("#file").on('change', function(e) {
+			// 취소를 누를 때 파일 비어있는 것 처리
+			if (e.target.files[0] == null) {
+				$("#fileName").text("");
+				$("#file").val("");
+				return; 
+			}
+			
+			//alert("이미지 선택");
+			let fileName = e.target.files[0].name; // ai-generated-8327632_640.jpg
+			console.log(fileName);
+			
+			// 확장자 유효성 체크
+			let ext = fileName.split(".").pop().toLowerCase();
+			//alert(ext);
+			if (ext != "jpg" && ext != "png" && ext != "gif") {
+				alert("이미지 파일만 업로드 할 수 있습니다.");
+				$("#file").val(""); // 파일 태그 파일 제거(보이지 않지만 업로드 될 수 있으므로 주의)
+				$("#fileName").text(""); // 보여지는 파일명 비움
+				return;
+			}
+			
+			// 유효성 통과한 이미지의 경우 파일명 노출
+			$("#fileName").text(fileName);
+		});
+		
+		// 글쓰기
+		$("#writeBtn").on('click', function() {
+			let content = $("#writeTextArea").val();
+			let file = $("#file").val();
+			if (!file) {
+				alert("이미지를 업로드 해주세요.");
+				return;
+			}
+			
+			// 파일이 업로드 된 경우 확장자 체크
+			let ext = file.split('.').pop().toLowerCase(); // 파일 경로를 .으로 나누고 확장자가 있는 마지막 문자열을 가져온 후 모두 소문자로 변경
+			if ($.inArray(ext, ['gif', 'png', 'jpg', 'jpeg']) == -1) {
+				alert("gif, png, jpg, jpeg 파일만 업로드 할 수 있습니다.");
+				$('#file').val(''); // 파일을 비운다.
+				return;
+			}
+			
+			// 폼태그를 자바스크립트에서 만든다.
+			let formData = new FormData();
+			formData.append("content", content);
+			formData.append("file", $('#file')[0].files[0]); // $('#file')[0]은 첫번째 input file 태그를 의미, files[0]는 업로드된 첫번째 파일
+			
+			// AJAX form 데이터 전송
+			$.ajax({
+				// request
+				type: "post"
+				, url: "/post/create"
+				, data: formData
+				, enctype: "multipart/form-data"    // 파일 업로드를 위한 필수 설정
+				, processData: false    // 파일 업로드를 위한 필수 설정
+				, contentType: false    // 파일 업로드를 위한 필수 설정
+				
+				// response
+				, success: function(data) {
+					if (data.code == 200) {
+						location.reload();
+					} else if (data.code == 500) { // 비로그인 일 때
+						location.href = "/user/sign-in-view";
+					} else {
+						alert(data.error_message);
+					}
+				}
+				, error: function(e) {
+					alert("글 저장에 실패했습니다. 관리자에게 문의해주세요.");
+				}
+			});  // --- ajax 끝
+		});
+	});
+</script>
+	
