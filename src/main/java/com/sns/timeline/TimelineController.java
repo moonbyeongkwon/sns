@@ -18,6 +18,8 @@ public class TimelineController {
 	
 	@GetMapping("/timeline/timeline-view")
 	public String timelineView(Model model) {
+		//	cardViewList
+		
 		List<PostEntity> postList = postBO.getPostList();
 				
 	    model.addAttribute("postList", postList);
