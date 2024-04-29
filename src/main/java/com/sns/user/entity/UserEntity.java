@@ -1,6 +1,6 @@
 package com.sns.user.entity;
 
-import java.util.Date;
+import java.time.ZonedDateTime;
 
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -24,7 +24,6 @@ import lombok.ToString;
 @Table(name = "user")
 @Entity
 public class UserEntity {
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
@@ -39,10 +38,10 @@ public class UserEntity {
 	private String email;
 	
 	@UpdateTimestamp
-	@Column(name = "createdAt")
-	private Date createdAt;
+	@Column(name = "createdAt", updatable = false)
+	private ZonedDateTime createdAt;
 	
 	@UpdateTimestamp
 	@Column(name = "updatedAt")
-	private Date updatedAt;
+	private ZonedDateTime updatedAt;
 }
