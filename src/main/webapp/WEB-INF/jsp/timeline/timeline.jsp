@@ -27,35 +27,44 @@
 	<div class="timeline-box my-5">
 	
 		<%-- 카드1 --%>
-		<c:forEach items="${postList}" var="post">
+		<c:forEach items="${cardViewList}" var="card">
 		<div class="card border rounded mt-3">
 			<%-- 글쓴이, 더보기(삭제) --%>
 			<div class="p-2 d-flex justify-content-between">
-				<span class="font-weight-bold">${post.userId}</span>
+				<span class="font-weight-bold">${card.user.loginId}</span>
 				
 				<%-- ...(더보기): 로그인 된 사람과 글쓴이 정보가 일치할 때 노출 --%>
+				<c:if test="${userId eq card.user.id}">
 				<a href="#" class="more-btn"> 
 					<img src="https://www.iconninja.com/files/860/824/939/more-icon.png" width="30">
 				</a>
+				</c:if>
 			</div>
 			
 			<%-- 카드 이미지 --%>
 			<div class="card-img">
-				<img src="${post.imagePath}" alt="본문 이미지" class="w-100">
+				<img src="${card.post.imagePath}" alt="본문 이미지" class="w-100">
 			</div>
 			
 			<%-- 좋아요 --%>
 			<div class="card-like m-3">
-				<a href="#" class="like-btn">
-					<img src="https://www.iconninja.com/files/214/518/441/heart-icon.png" width="18" height="18" alt="empty heart">
-				</a>
-				좋아요 12개				
+				<c:if test="${card.filledLike eq false}">
+					<a href="#" class="like-btn" data-user-id="${userId}" data-post-id="${card.post.id}">
+						<img src="https://www.iconninja.com/files/214/518/441/heart-icon.png" width="18" height="18" alt="empty heart">
+					</a>
+				</c:if>
+				<c:if test="${card.filledLike eq true}">
+					<a href="#" class="like-btn" data-user-id="${userId}" data-post-id="${card.post.id}">
+						<img src="https://www.iconninja.com/files/527/809/128/heart-icon.png" width="18" height="18" alt="fill heart">
+					</a>
+				</c:if>
+				좋아요 ${card.likeCount}개				
 			</div>
 			
 			<%-- 글 --%>
 			<div class="card-post m-3">
-				<span class="font-weight-bold">${post.userId}</span>
-				<span>${post.content}</span>
+				<span class="font-weight-bold">${card.user.loginId}</span>
+				<span>${card.post.content}</span>
 			</div>
 			
 			<%-- 댓글 제목 --%>
@@ -66,20 +75,24 @@
 			<%-- 댓글 목록 --%>
 			<div class="card-comment-list m-2">
 				<%-- 댓글 내용들 --%>
+				<c:forEach items="${card.commentList}" var="commentView">
 				<div class="card-comment m-1">
-					<span class="font-weight-bold">댓글쓴이</span>
-					<span>댓글 내용11111</span>
+					<span class="font-weight-bold">${commentView.user.loginId}</span>
+					<span>${commentView.comment.content}</span>
 					
 					<%-- 댓글 삭제 버튼(자신의 댓글만 삭제 버튼 노출) --%>
-					<a href="#" class="comment-del-btn">
+					<c:if test="${userId eq commentView.comment.userId}">
+					<a href="#" class="comment-del-btn" data-comment-id="${commentView.comment.id}">
 						<img src="https://www.iconninja.com/files/603/22/506/x-icon.png" width="10" height="10">
 					</a>
+					</c:if>
 				</div>
+				</c:forEach>
 				
 				<%-- 댓글 쓰기 --%>
 				<div class="comment-write d-flex border-top mt-2">
 					<input type="text" class="form-control border-0 mr-2 comment-input" placeholder="댓글 달기"/> 
-					<button type="button" class="comment-btn btn btn-light">게시</button>
+					<button type="button" class="comment-btn btn btn-light" data-post-id="${card.post.id}" data-user-id="${userId}">게시</button>
 				</div>
 			</div> <%--// 댓글 목록 끝 --%>
 		</div> <%--// 카드1 끝 --%>
@@ -168,7 +181,113 @@
 					alert("글 저장에 실패했습니다. 관리자에게 문의해주세요.");
 				}
 			});  // --- ajax 끝
+		}); //-- 글쓰기 이벤트 끝
+		
+		// 댓글 쓰기
+		$(".comment-btn").on('click', function() {
+			// 로그인 여부
+			let userId = $(this).data("user-id");
+			//alert("userId:" + userId);
+			if (!userId) {
+				alert("로그인을 해주세요.");
+				location.href = "/user/sign-in-view";
+				return;
+			}
+			
+			// 댓글이 쓰여질 글번호 가져오기
+			let postId = $(this).data("post-id");
+			//alert(postId);
+			
+			// 댓글 내용 가져오기(지금 클릭된 게시 근처에 있는 댓글 내용)
+			// 1) 이전 태그 값 가져오기
+			// let content = $(this).prev().val().trim();
+		
+			// 2) 형제 태그 가져오기
+			let content = $(this).siblings("input").val().trim();
+			//alert(content);
+			
+			if (!content) {
+				alert("댓글 내용을 입력하세요.");
+				return;
+			}
+			
+			$.ajax({
+				// request
+				type:"POST"
+				, url:"/comment/create"
+				, data:{"postId":postId, "content":content}
+				
+				// response
+				, success:function(data) {
+					if (data.code == 200) {
+						location.reload(true);
+					} else if (data.code == 500) {
+						alert(data.error_message);
+						location.href = "/user/sign-in-view";
+					}
+				}
+				, error:function(e) {
+					alert("댓글 쓰기에 실패했습니다.");
+				}
+			});
 		});
-	});
+		
+		// 댓글 삭제
+		$(".comment-del-btn").on('click', function(e) {
+			e.preventDefault(); // 위로 올라감 방지
+			
+			let commentId = $(this).data("comment-id");
+			//alert(commentId);
+			
+			$.ajax({
+				// request
+				type:"DELETE"
+				, url:"/comment/delete"
+				, data:{"commentId":commentId}
+				
+				// response
+				, success:function(data) {
+					if (data.code == 200){
+						location.reload(true);
+					} else {
+						alert(data.error_message);
+					}
+				}
+				, error:function(e) {
+					alert("댓글을 삭제하는데 실패했습니다.");
+				}
+			});
+		});
+		
+		// 좋아요/해제
+		$(".like-btn").on('click', function(e) {
+			e.preventDefault(); // 위로 올라감 방지
+			
+			// 로그인 여부 
+			let userId = $(this).data("user-id");
+			if (!userId) {
+				alert("로그인을 해주세요.");
+				return;
+			}
+			
+			let postId = $(this).data("post-id");
+			// alert(postId);
+			
+			$.ajax({
+				url:"/like/" + postId
+				, success:function(data) {
+					if (data.code == 200) {
+						// 새로고침 => timeline/timeline-view
+						location.reload(true);
+					} else {
+						alert(data.error_message);
+					}
+				}
+				, error:function(e) {
+					alert("좋아요를 하는데 실패했습니다.");
+				}
+			});
+		});
+		
+	}); //-- ready 끝
 </script>
-	
