@@ -35,7 +35,7 @@
 				
 				<%-- ...(더보기): 로그인 된 사람과 글쓴이 정보가 일치할 때 노출 --%>
 				<c:if test="${userId eq card.user.id}">
-				<a href="#" class="more-btn"> 
+				<a href="#" class="more-btn" data-post-id="${card.post.id}" data-toggle="modal" data-target="#modal"> 
 					<img src="https://www.iconninja.com/files/860/824/939/more-icon.png" width="30">
 				</a>
 				</c:if>
@@ -98,7 +98,28 @@
 		</div> <%--// 카드1 끝 --%>
 		</c:forEach>
 	</div> <%--// 타임라인 영역 끝  --%>
+	
+<!-- Modal -->
+<div class="modal fade" id="modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<!-- 
+		modal-sm: 가로 사이즈 작은 모달
+		modal-dialog-centered: 수직 가운데 위치
+	 -->
+	<div class="modal-dialog modal-sm modal-dialog-centered">
+		<div class="modal-content text-center">
+      		<div class="border-bottom py-3">
+      			<a href="#" id="postDelete">삭제하기</a>
+      		</div>
+      		<div class="py-3">
+      			<a href="#" data-dismiss="modal">취소하기</a>
+      		</div>
+		</div>
+	</div>
+</div>
+
 </div> <%--// contents-box 끝  --%>
+
+
 
 <script>
 	$(document).ready(function() {
@@ -288,6 +309,28 @@
 				}
 			});
 		});
+		
+		// ... 더보기 클릭 => Modal 창 띄우기
+		$(".more-btn").on('click', function(e) {
+			e.preventDefault(); // 위로 올라가는 현상 방지(a 태그)
+			
+			let postId = $(this).data('post-id');
+			//alert(postId);
+			
+			// 1개 존재하는 modal에 data-post-id 심어 놓음(재활용)
+			$("#modal").data("post-id", postId); // setting
+		});
+		
+		// 모달 안에 있는 삭제하기 
+		$("#modal #postDelete").on('click', function(e) {
+			e.preventDefault(); // 위로 올라가는 현상 방지(a)
+			
+			let postId = $("#modal").data('post-id');
+			//alert(postId);
+			
+			
+		});
+		
 		
 	}); //-- ready 끝
 </script>
